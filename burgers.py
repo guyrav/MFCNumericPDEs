@@ -65,6 +65,7 @@ def init(params: Params,
     x = np.linspace(params.x_start, params.x_end, params.nx + 1, endpoint=True)
     t = np.linspace(params.t_start, params.t_end, params.nt + 1, endpoint=True)
     u = initial_condition(x)
+    u[-1] = u[0]
 
     if record_all:
         all_u = np.zeros((params.nt + 1, params.nx + 1), dtype=float)
@@ -463,18 +464,36 @@ def real_solution_tk(params: Params, k: np.ndarray, u_0: np.ndarray, u_mean: flo
     return u_0 * np.exp(- (params.nu * k**2 + 1j * u_mean * k) * params.T)
 
 
-def run_single_accuracy_experiment(params: Params, u_mean: float, initial_condition: Callable):
+def plot_spectral_solution(params: Params, initial_condition: Callable, u_mean: float):
+    x, t, u_0 = init(params, initial_condition, record_all=False)
+    k = 2 * np.pi * np.fft.fftfreq(params.nx, params.dx)
+    u_0_hat = np.fft.fft(u_0[:-1])
+    ylims = [u_0.min(), u_0.max()]
+    # plt.figure()
+    for i, time in enumerate(t[1:]):
+        params_t = Params(time, params.L, i + 1, params.nx, params.nu)
+        u = np.fft.ifft(real_solution_tk(params_t, k, u_0_hat, u_mean))
+        plt.cla()
+        plt.plot(x, np.pad(u, [(0, 1)], mode='wrap'), label=f"u({time:.3f}, x)")
+        plt.ylim(ylims)
+        plt.legend()
+        plt.pause(0.1)
+
+
+def run_single_accuracy_experiment(params: Params, u_mean: float, initial_condition: Callable, x_ref, u_ref):
     x, t, u_0 = init(params, initial_condition, record_all=False)
 
-    u_0_k = np.fft.fft(u_0[:-1])  # remove redundant endpoint
-    k = 2 * np.pi / params.L * np.fft.fftfreq(params.nx)
-    real_u_k = real_solution_tk(params, k, u_0_k, u_mean)
-    real_u = np.fft.ifft(real_u_k)
+    # u_0_k = np.fft.fft(u_0[:-1])  # remove redundant endpoint
+    # k = 2 * np.pi / params.L * np.fft.fftfreq(params.nx)
+    # real_u_k = real_solution_tk(params, k, u_0_k, u_mean)
+    # real_u = np.fft.ifft(real_u_k)
+
+    u_ref_interp = np.interp(x[:-1], x_ref[:-1], u_ref)
 
     u = FTCS(u_0, params)
-    scheme_u_k = np.fft.fft(u)
+    # scheme_u_k = np.fft.fft(u)
 
-    return np.sqrt(np.mean(np.abs(u - real_u) ** 2))
+    return np.sqrt(np.mean(np.abs(u - u_ref_interp) ** 2))
     # return np.sqrt(np.sum(np.abs(scheme_u_k - real_u_k) ** 2)) / params.nx
 
 
@@ -486,7 +505,7 @@ def plot_accuracy(nxs, alpha, errors):
     plt.scatter(log_nx, log_errors, color='black')
     plt.xlabel('log(nx)')
     plt.ylabel('log(MSE)')
-    plt.title(f"Error at final time T (with nt = {alpha} * nx^2)")
+    plt.title(f"Error vs. high-resolution solution at final time T (with nt = {alpha} * nx^2)")
 
     p = np.polyfit(log_nx, log_errors, 1)
     plt.plot(log_nx, np.polyval(p, log_nx), '--', color='red',
@@ -504,11 +523,23 @@ def accuracy_experiment(T, L, nu, u_mean, initial_condition):
     nts = alpha * nxs**2
     errors = np.zeros(num_points, dtype=float)
 
+    x_ref, u_ref = reference_solution(T, L, nu, initial_condition)
+
     for i, (nx, nt) in enumerate(zip(nxs, nts)):
         params = Params(T, L, nt, nx, nu)
-        errors[i] = run_single_accuracy_experiment(params, u_mean, initial_condition)
+        errors[i] = run_single_accuracy_experiment(params, u_mean, initial_condition, x_ref, u_ref)
 
     plot_accuracy(nxs, alpha, errors)
+
+
+def reference_solution(T, L, nu, initial_condition):
+    alpha = int(np.ceil(T * nu / L**2))
+    nx = 500
+    nt = alpha * nx**2
+    params = Params(T, L, nt, nx, nu)
+    x, t, u_0 = init(params, initial_condition, record_all=False)
+
+    return x, FTCS(u_0, params)
 
 
 def main():
@@ -525,9 +556,11 @@ def main():
     T = L = 1
     u_mean = 0.5
     epsilon = 0.05
-    nu = 0.1
-    initial_condition = near_constant(u_mean, epsilon, gaussian(L/2, 1))
+    nu = 0.005
+    # initial_condition = near_constant(u_mean, epsilon, gaussian(L/2, 1))
+    initial_condition = near_constant(u_mean, epsilon, reverse_step(1./3, 2./3))
     accuracy_experiment(T, L, nu, u_mean, initial_condition)
+    # plot_spectral_solution(Params(T, L, 40, 200, nu), initial_condition, u_mean)
 
     # x, t, u_0, u = init(params, initial_condition, True)
     #
