@@ -444,7 +444,7 @@ def linearized_stability_experiment(T, L, nt, u_mean, initial_condition):
 
         cs.append(c_actual)
         ds.append(d_actual)
-        log_vs.append(np.log(max(v_relative, 1)))
+        log_vs.append(np.log(max(v_relative, np.exp(-2))))
 
     plot_linearized_stability(cs, ds, log_vs)
 
@@ -459,26 +459,78 @@ def reverse_step(start, end):
     return ret
 
 
-def main():
-    # dxs = np.logspace(1, 1e-6, 10)
-    # for dx in dxs:
-    # params = Params(1, 1, 200, 20, 0.1)
-    # initial_condition = lambda x: np.sqrt(2 * np.pi) * gaussian(params.L/2, 1)(x)
+def real_solution_tk(params: Params, k: np.ndarray, u_0: np.ndarray, u_mean: float):
+    return u_0 * np.exp(- (params.nu * k**2 + 1j * u_mean * k) * params.T)
 
+
+def run_single_accuracy_experiment(params: Params, u_mean: float, initial_condition: Callable):
+    x, t, u_0 = init(params, initial_condition, record_all=False)
+
+    u_0_k = np.fft.fft(u_0[:-1])  # remove redundant endpoint
+    k = 2 * np.pi / params.L * np.fft.fftfreq(params.nx)
+    real_u_k = real_solution_tk(params, k, u_0_k, u_mean)
+    real_u = np.fft.ifft(real_u_k)
+
+    u = FTCS(u_0, params)
+    scheme_u_k = np.fft.fft(u)
+
+    return np.sqrt(np.mean(np.abs(u - real_u) ** 2))
+    # return np.sqrt(np.sum(np.abs(scheme_u_k - real_u_k) ** 2)) / params.nx
+
+
+def plot_accuracy(nxs, alpha, errors):
+    log_nx = np.log(nxs)
+    log_errors = np.log(errors)
+
+    plt.figure()
+    plt.scatter(log_nx, log_errors, color='black')
+    plt.xlabel('log(nx)')
+    plt.ylabel('log(MSE)')
+    plt.title(f"Error at final time T (with nt = {alpha} * nx^2)")
+
+    p = np.polyfit(log_nx, log_errors, 1)
+    plt.plot(log_nx, np.polyval(p, log_nx), '--', color='red',
+             label=f"log(MSE) = {p[0]:.1f}*log(nx) + {p[1]:.1f}")
+    plt.legend()
+    plt.show()
+
+
+def accuracy_experiment(T, L, nu, u_mean, initial_condition):
+    nx_min_log = 3
+    num_points = 7
+    base = 2
+    nxs = np.logspace(nx_min_log, nx_min_log + num_points - 1, num_points, base=base, dtype=int)
+    alpha = int(np.ceil(T * nu / L**2))
+    nts = alpha * nxs**2
+    errors = np.zeros(num_points, dtype=float)
+
+    for i, (nx, nt) in enumerate(zip(nxs, nts)):
+        params = Params(T, L, nt, nx, nu)
+        errors[i] = run_single_accuracy_experiment(params, u_mean, initial_condition)
+
+    plot_accuracy(nxs, alpha, errors)
+
+
+def main():
     # Stability experiment
     T = L = 1
     nt = 12
-    u_mean = 0.2
-    epsilon = 0.05
+    # u_mean = 0.2
+    # epsilon = 0.05
     # initial_condition = near_constant(u_mean, epsilon, gaussian(L/2, 1))
-    initial_condition = near_constant(u_mean, epsilon, reverse_step(1./3, 2./3))
-    linearized_stability_experiment(T, L,nt, u_mean, initial_condition)
+    # initial_condition = near_constant(u_mean, epsilon, reverse_step(1./3, 2./3))
+    # linearized_stability_experiment(T, L,nt, u_mean, initial_condition)
 
-
-
+    # Accuracy experiment
+    T = L = 1
+    u_mean = 0.5
+    epsilon = 0.05
+    nu = 0.1
+    initial_condition = near_constant(u_mean, epsilon, gaussian(L/2, 1))
+    accuracy_experiment(T, L, nu, u_mean, initial_condition)
 
     # x, t, u_0, u = init(params, initial_condition, True)
-
+    #
     # u_final = FTCS(u_0, params, u)
 
     #plot_scaled_mass(u0,u_all,**p)
