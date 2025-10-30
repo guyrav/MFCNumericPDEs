@@ -1,8 +1,8 @@
 import numpy as np
 
-from params import ViscousParams
+from params import ViscousParams, AdvectionDiffusionParams
 from plots import plot_evolution, plot_stability_contours, plot_mass_evolution, plot_linearized_stability, plot_accuracy
-from schemes import BurgersFTCS, AdvectionDiffusionFTCS
+from schemes import BurgersFTCS, AdvectionDiffusionFTCS, BurgersSpectral
 from experiments import run_time_evolution, divergence_contour_experiment, get_relative_mass_evolution, \
     linearized_stability_experiment, accuracy_experiment
 from initial_conditions import gaussian, near_constant, reverse_step
@@ -19,6 +19,19 @@ def main():
     # params = ViscousParams(T, L, nt, nx, nu)
     # x, t, u = run_time_evolution(scheme, params, initial_condition)
     # plot_evolution(t, x, u, "Burgers equation, FTCS, gaussian initial condition")
+
+    scheme = BurgersSpectral()
+    T = 20
+    L = 10
+    nt = 120
+    nx = 50
+    nu = 0.1
+    u_mean = 0.2
+    epsilon = 0.05
+    initial_condition = near_constant(u_mean, epsilon, gaussian(L/2, 1))
+    params = AdvectionDiffusionParams(T, L, nt, nx, nu, u_mean)
+    x, t, u = run_time_evolution(scheme, params, initial_condition)
+    plot_evolution(t, x, u, "Burgers equation, spectral scheme, gaussian initial condition")
 
     # scheme = BurgersFTCS()
     # nt = 120
@@ -41,18 +54,18 @@ def main():
     # mass = get_relative_mass_evolution(history)
     # plot_mass_evolution(t, mass)
 
-    # scheme = BurgersFTCS()
-    scheme = AdvectionDiffusionFTCS()
-    T = L = 1
-    nt = 12
-    u_mean = 0.2
-    epsilon = 0.05
-    # initial_condition = near_constant(u_mean, epsilon, gaussian(L/2, 1))
-    initial_condition = near_constant(u_mean, epsilon, reverse_step(1. / 3, 2. / 3))
-    cs, ds, vs = linearized_stability_experiment(scheme, T, L, nt, u_mean, initial_condition,
-                                                 0.1, 1.5, 40, 0.1, 0.7, 40)
-    plot_linearized_stability(cs, ds, vs, log_min=-3, log_max=10,
-                              title=r"Log Relative Total Variation at $t=1$ (clipped to [-3, 10])")
+    # # scheme = BurgersFTCS()
+    # scheme = AdvectionDiffusionFTCS()
+    # T = L = 1
+    # nt = 12
+    # u_mean = 0.2
+    # epsilon = 0.05
+    # # initial_condition = near_constant(u_mean, epsilon, gaussian(L/2, 1))
+    # initial_condition = near_constant(u_mean, epsilon, reverse_step(1. / 3, 2. / 3))
+    # cs, ds, vs = linearized_stability_experiment(scheme, T, L, nt, u_mean, initial_condition,
+    #                                              0.1, 1.5, 40, 0.1, 0.7, 40)
+    # plot_linearized_stability(cs, ds, vs, log_min=-3, log_max=10,
+    #                           title=r"Log Relative Total Variation at $t=1$ (clipped to [-3, 10])")
 
     # scheme = BurgersFTCS()
     # T = L = 1

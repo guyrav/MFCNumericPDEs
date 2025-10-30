@@ -100,7 +100,7 @@ class BurgersSpectral(Scheme):
         if history is not None:
             history[0, :] = initial_condition
 
-        has_padding = (initial_condition.shape[0] == params.nx)  # Assumed either nx or nx + 1
+        has_padding = (initial_condition.shape[0] > params.nx)  # Assumed either nx or nx + 1
         if has_padding:
             initial_condition = initial_condition[:-1]
 
@@ -109,7 +109,7 @@ class BurgersSpectral(Scheme):
         if history is not None:
             k = k.reshape((1,) + k.shape)
             initial_condition = initial_condition.reshape((1,) + initial_condition.shape)
-            t = np.linspace(params.t_start + params.dt, params.t_end, params.nt + 1).reshape((params.nt, 1))
+            t = np.linspace(params.t_start + params.dt, params.t_end, params.nt).reshape((params.nt, 1))
         else:
             t = params.T
 
