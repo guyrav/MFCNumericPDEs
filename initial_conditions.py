@@ -24,3 +24,9 @@ def near_constant(u_0: float, epsilon: float, perturbation: Callable):
     def ret(x: np.ndarray[float]) -> np.ndarray[float]:
         return u_0 * (1 + epsilon * perturbation(x))
     return ret
+
+
+def sine_wave(k):
+    def ret(x):
+        return np.sin(k * x)
+    return ret
