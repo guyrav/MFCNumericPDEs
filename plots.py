@@ -15,9 +15,7 @@ def plot_evolution(t: np.ndarray[float], x: np.ndarray[float], u: np.ndarray[flo
     u : (np.ndarray) Velocity field at all time steps.
     title : (str) Plot title.
     """
-    u_0_min, u_0_mean, u_0_max = u[0].min(), u[0].mean(), u[0].max()
-    alpha = 1.4
-    ylims = [alpha * u_0_min + (1 - alpha) * u_0_mean, alpha * u_0_max + (1 - alpha) * u_0_mean]
+    ylims = get_ylims(u[0])
 
     plt.plot(x, u[0], 'k', label='Initial Condition')
     plt.title(title)
@@ -43,9 +41,7 @@ def plot_evolution(t: np.ndarray[float], x: np.ndarray[float], u: np.ndarray[flo
 def plot_evolution_comparison(t: np.ndarray[float], x: np.ndarray[float],
                               u_a: np.ndarray[float], u_b: np.ndarray[float],
                               title: str, label_a: str, label_b: str):
-    u_0_min, u_0_mean, u_0_max = u_a[0].min(), u_a[0].mean(), u_a[0].max()
-    alpha = 1.4
-    ylims = [alpha * u_0_min + (1 - alpha) * u_0_mean, alpha * u_0_max + (1 - alpha) * u_0_mean]
+    ylims = get_ylims(u_a[0])
 
     plt.plot(x, u_a[0], 'k', label='Initial Condition')
     plt.title(title)
@@ -153,4 +149,32 @@ def plot_accuracy(dxs, errors, title: str):
     plt.plot(log_dx, np.polyval(p, log_dx), '--', color='red',
              label=f"log(MSE) = {p[0]:.1f}*log(dx) + {p[1]:.1f}")
     plt.legend()
+    plt.show()
+
+
+def get_ylims(*args):
+    u_min = min(arg.min() for arg in args)
+    u_max = max(arg.max() for arg in args)
+    u_mean = (u_min + u_max) / 2.
+    alpha = 1.4
+    ylims = [alpha * u_min + (1 - alpha) * u_mean, alpha * u_max + (1 - alpha) * u_mean]
+    return ylims
+
+
+def plot_bounds_evolution(t, u_min, u_max, title):
+    bad_inds_min = 1 + np.argwhere(u_min[1:] < u_min[:-1])
+    bad_inds_max = 1 + np.argwhere(u_max[1:] > u_max[:-1])
+    bad_ts = np.concatenate([t[bad_inds_min], t[bad_inds_max]])
+    bad_us = np.concatenate([u_min[bad_inds_min], u_max[bad_inds_max]])
+
+    plt.figure()
+    plt.plot(t, u_max, color='black')
+    plt.plot(t, u_min, color='black')
+    plt.fill_between(t, u_min, u_max, color='blue', alpha=0.5)
+    plt.scatter(bad_ts, bad_us, color='red', label='Bounds expanded')
+    plt.ylim(get_ylims(u_min, u_max))
+    plt.title(title)
+    plt.legend()
+    plt.xlabel('t')
+    plt.ylabel('u')
     plt.show()

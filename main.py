@@ -2,11 +2,11 @@ import numpy as np
 
 from params import ViscousParams, AdvectionDiffusionParams
 from plots import plot_evolution, plot_stability_contours, plot_mass_evolution, plot_linearized_stability, \
-    plot_accuracy, plot_evolution_comparison
+    plot_accuracy, plot_evolution_comparison, plot_bounds_evolution
 from schemes import BurgersFTCS, AdvectionDiffusionFTCS, AdvectionDiffusionSpectral, BurgersLeapfrog, \
     BurgersSemiSpectral
 from experiments import run_time_evolution, divergence_contour_experiment, get_relative_mass_evolution, \
-    linearized_stability_experiment, accuracy_experiment, reference_solution
+    linearized_stability_experiment, accuracy_experiment, reference_solution, get_bounds
 from initial_conditions import gaussian, near_constant, reverse_step, sine_wave
 
 
@@ -72,6 +72,24 @@ def run_mass_evolution(scheme):
     plot_mass_evolution(t, mass)
 
 
+def run_bounds_evolution(scheme, dt, dx, nu, epsilon):
+    nt = 40
+    nx = 100
+    T = nt * dt
+    L = nx * dx
+    u_mean = 0.2
+    params = AdvectionDiffusionParams(T, L, nt, nx, nu,  u_mean)
+    initial_condition = near_constant(u_mean, epsilon, reverse_step(1. / 3 * L, 2. / 3 * L))
+    _, t, history = run_time_evolution(scheme, params, initial_condition)
+    u_min, u_max = get_bounds(history)
+    plot_bounds_evolution(t, u_min, u_max, "Bounds of $u(t, x)$ over time")
+    # plot_bounds_evolution(t, u_min, u_max,
+    #                       f"Bounds of $u(x, t)$ with "
+    #                       f"$\\frac{{\\Delta_t\\Delta_u}}{{2\\Delta_x}}={dt * epsilon / dx:.2f}$ "
+    #                       f"and $\\frac{{\\nu\\Delta_t\\Delta_u}}{{\\Delta_x^2}}={nu * dt * epsilon / dx**2:.2f}$")
+
+
+
 def main():
     # run_evolution(BurgersFTCS(), 20, 10, 120, 50, 0.1)
 
@@ -85,7 +103,9 @@ def main():
     # run_cd_linearized_stability(BurgersSemiSpectral(), 1, 1, 12, 0.2, 0.05,
     #                             reverse_step(1. / 3, 2. / 3))
 
-    run_accuracy(BurgersFTCS())
+    # run_accuracy(AdvectionDiffusionSpectral())
+
+    run_bounds_evolution(BurgersLeapfrog(BurgersFTCS()), 1, 5, 0.1, 0.05)
 
 
 if __name__ == "__main__":

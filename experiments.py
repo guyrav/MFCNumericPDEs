@@ -45,6 +45,10 @@ def get_relative_mass_evolution(history: np.ndarray):
     return relative_total_mass(m_0, history[:, :-1])
 
 
+def get_bounds(history: np.ndarray[float]):
+    return history.min(axis=1), history.max(axis=1)
+
+
 def get_relative_variation_evolution(history: np.ndarray):
     v_0 = total_variation(history[0, :-1])
     return relative_total_variation(v_0, history[:, :-1])
