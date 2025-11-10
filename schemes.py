@@ -4,19 +4,25 @@ from params import NumericalSchemeParams, ViscousParams, AdvectionDiffusionParam
 
 
 class Scheme(object):
-    """Numerical scheme object.
+    """Base class for numerical schemes for solving PDEs.
 
     Methods:
-
+        __call__(): (virtual) Run the scheme to compute the time evolution of a PDE solution.
+        minimal_stable_nt(): (virtual) Compute the minimal number of time steps needed for numerical stability.
+        __str__(): (virtual) Print the scheme description.
     """
     def __call__(self, params: NumericalSchemeParams, initial_condition: np.ndarray[float], history=None):
         """Evolve the initial condition over time using the numerical scheme.
 
-        Arguments:
+        Args:
             params: (Params) Parameters object.
             initial_condition: (ndarray[float]) Initial condition as a sequence of values.
-            history: (ndarray[float], optional) Table of size (nt + 1) * nx or (nt + 1) * (nx + 1)#
+            history: (ndarray[float], optional) Table of size (nt + 1) * nx or (nt + 1) * (nx + 1)
                                                 to hold all values over time in.
+
+        Note:
+            A length of nx + 1 in space is taken to imply that the boundary point is duplicated
+            and appears at both ends, as in a periodic boundary.
         """
         pass
 
@@ -24,18 +30,20 @@ class Scheme(object):
     def minimal_stable_nt(nx, *args, **kwargs):
         pass
 
-
     def __str__(self):
         return "Unknown scheme"
 
 
-class ForwardTimeScheme(Scheme):
+class SingleTimeStepScheme(Scheme):
+    """Base class for numerical schemes that use only the values at time n to compute the values at time n+1.
+
+    Methods:
+        _apply_step(): (virtual) Apply one time step, putting the output back in the current state.
+    """
     def _apply_step(self, params: NumericalSchemeParams, current_state: np.ndarray[float]):
-        """Apply one forward time step, putting the output back in the current state."""
         pass
 
     def __call__(self, params: NumericalSchemeParams, initial_condition: np.ndarray[float], history=None):
-        """Evolve the initial condition over time using the numerical scheme."""
         has_padding = (initial_condition.shape[0] > params.nx)  # Assumed either nx or nx + 1
 
         u = np.zeros(params.nx, dtype=float)
@@ -55,11 +63,11 @@ class ForwardTimeScheme(Scheme):
         return np.pad(u, [(0, 1)], mode='wrap') if has_padding else u
 
 
-class BurgersFTCS(ForwardTimeScheme):
+class BurgersFTCS(SingleTimeStepScheme):
     """Forward-time centered-space numerical scheme for the viscous Burgers equation.
 
     Methods:
-        apply_step: Apply one forward time step, putting the output back in the current state.
+        _apply_step: Apply one forward time step, putting the output back in the current state.
                     Overridden from parent class.
     """
     def _apply_step(self, params: ViscousParams, current_state: np.ndarray[float]):
@@ -73,17 +81,19 @@ class BurgersFTCS(ForwardTimeScheme):
 
     @staticmethod
     def minimal_stable_nt(nx, T: float, L: float, nu: float):
+        # Only true for high enough nu
+        # Higher than the actual mininum, in order to have a consistent relationship between dx and dt
         return int(np.ceil(nu * L / (T ** 2))) * (nx ** 2)
 
     def __str__(self):
         return "Burgers, FTCS"
 
 
-class AdvectionDiffusionFTCS(ForwardTimeScheme):
+class AdvectionDiffusionFTCS(SingleTimeStepScheme):
     """Forward-time centered-space numerical scheme for the linear advection-diffusion equation.
 
     Methods:
-        apply_step: Apply one forward time step, putting the output back in the current state.
+        _apply_step: Apply one forward time step, putting the output back in the current state.
                     Overridden from parent class.
     """
     def _apply_step(self, params: AdvectionDiffusionParams, current_state: np.ndarray[float]):
@@ -98,6 +108,7 @@ class AdvectionDiffusionFTCS(ForwardTimeScheme):
 
     @staticmethod
     def minimal_stable_nt(nx, T: float, L: float, nu: float):
+        # Only works for high enough nu
         return int(np.ceil(nu * L / (T ** 2))) * (nx ** 2)
 
     def __str__(self):
@@ -142,6 +153,17 @@ class AdvectionDiffusionSpectral(Scheme):
 
 
 class Leapfrog(Scheme):
+    """Leapfrog type scheme.
+
+    Attributes:
+        first_step_scheme: (Scheme) Different numerical scheme to apply to the first time step.
+
+    Methods:
+        _apply_first_step(): Use the given scheme to apply the first time step.
+        _apply_step(): Use both the previous and current state to compute the next state,
+                       which is then stored in the current state.
+        _get_first_step_params(): Compute the parameters for the scheme that is applied at the first step.
+    """
     def __init__(self, first_step_scheme: Scheme):
         self.first_step_scheme = first_step_scheme
 
@@ -160,7 +182,6 @@ class Leapfrog(Scheme):
         pass
 
     def __call__(self, params: NumericalSchemeParams, initial_condition: np.ndarray[float], history=None):
-        """Evolve the initial condition over time using the numerical scheme."""
         has_padding = (initial_condition.shape[0] > params.nx)  # Assumed either nx or nx + 1
 
         u = np.zeros(params.nx, dtype=float)
@@ -188,6 +209,7 @@ class Leapfrog(Scheme):
 
 
 class BurgersLeapfrog(Leapfrog):
+    """Leapfrog scheme for solving the Burgers equation."""
     def _get_first_step_params(self, params: ViscousParams) -> NumericalSchemeParams:
         return ViscousParams(params.dt, params.L, 1, params.nx, params.nu)
 
@@ -210,7 +232,10 @@ class BurgersLeapfrog(Leapfrog):
         return "Burgers, CTCS with FT diffusion"
 
 
-class BurgersSemiSpectral(ForwardTimeScheme):
+class BurgersSemiSpectral(SingleTimeStepScheme):
+    """Semispectral scheme for solving the Burgers equation.
+
+    Uses Fourier analysis to compute the spatial derivatives, but does first-order forward time steps."""
     def _apply_step(self, params: ViscousParams, current_state: np.ndarray[float]):
         c = params.dtdx
         d = params.d
