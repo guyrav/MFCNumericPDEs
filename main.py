@@ -2,7 +2,7 @@ import numpy as np
 
 from params import ViscousParams, AdvectionDiffusionParams
 from plots import plot_evolution, plot_stability_contours, plot_mass_evolution, plot_linearized_stability, \
-    plot_accuracy, plot_evolution_comparison, plot_bounds_evolution
+    plot_accuracy, plot_evolution_comparison, plot_bounds_evolution, plot_initial_condition
 from schemes import BurgersFTCS, AdvectionDiffusionFTCS, AdvectionDiffusionSpectral, BurgersLeapfrog, \
     BurgersSemiSpectral
 from experiments import run_time_evolution, divergence_contour_experiment, get_relative_mass_evolution, \
@@ -33,6 +33,9 @@ def run_cd_linearized_stability(scheme, T, L, nt, u_mean, epsilon, perturbation)
     initial_condition = near_constant(u_mean, epsilon, perturbation)
     cs, ds, vs = linearized_stability_experiment(scheme, T, L, nt, u_mean, initial_condition,
                                                  0.1, 1.5, 40, 0.1, 0.7, 40)
+    x = np.linspace(0, L, 100, dtype=float)
+    u_0 = initial_condition(x)
+    plot_initial_condition(x, u_0, f"Initial condition, $\\epsilon / u_{{\\text{{mean}}}} = {epsilon}$")
     plot_linearized_stability(cs, ds, vs, log_min=-3, log_max=10,
                               title=f"{str(scheme)}, Relative Total Variation at t={T} (clipped)")
 
@@ -55,8 +58,9 @@ def run_accuracy(scheme):
     u_mean = 0.5
     epsilon = 0.05
     nu = 0.1
-    initial_condition = near_constant(u_mean, epsilon, gaussian(L/2, 1))
+    # initial_condition = near_constant(u_mean, epsilon, gaussian(L/2, 1))
     # initial_condition = near_constant(u_mean, epsilon, reverse_step(1. / 3, 2. / 3))
+    initial_condition = gaussian(L/2, 1)
     dxs, errors = accuracy_experiment(scheme, T, L, nu, initial_condition)
     plot_accuracy(dxs, errors, r"Error vs. high-resolution solution at $t=1$ (with $\Delta t \sim \Delta x^2$)")
 
@@ -100,12 +104,12 @@ def main():
 
     # run_mass_evolution(BurgersSemiSpectral())
 
-    # run_cd_linearized_stability(BurgersSemiSpectral(), 1, 1, 12, 0.2, 0.05,
+    # run_cd_linearized_stability(BurgersFTCS(), 1, 1, 12, 0.2, 1.,
     #                             reverse_step(1. / 3, 2. / 3))
 
-    # run_accuracy(AdvectionDiffusionSpectral())
+    run_accuracy(BurgersFTCS())
 
-    run_bounds_evolution(BurgersLeapfrog(BurgersFTCS()), 1, 5, 0.1, 0.05)
+    # run_bounds_evolution(BurgersLeapfrog(BurgersFTCS()), 1, 5, 0.1, 0.05)
 
 
 if __name__ == "__main__":

@@ -38,6 +38,27 @@ def plot_evolution(t: np.ndarray[float], x: np.ndarray[float], u: np.ndarray[flo
     plt.show()
 
 
+def plot_initial_condition(x: np.ndarray[float], u: np.ndarray[float], title: str):
+    """
+    Plot the initial condition of the system.
+
+    Parameters
+    ----------
+    x : (np.ndarray) Space labels.
+    u : (np.ndarray) Velocity field at time t_start.
+    title : (str) Plot title.
+    """
+    ylims = [0, 0.5]
+
+    plt.plot(x, u, 'k')
+    plt.title(title)
+    plt.ylabel('velocity')
+    plt.axhline(0, linestyle=':', color='black')
+    plt.ylim(ylims)
+
+    plt.show()
+
+
 def plot_evolution_comparison(t: np.ndarray[float], x: np.ndarray[float],
                               u_a: np.ndarray[float], u_b: np.ndarray[float],
                               title: str, label_a: str, label_b: str):
@@ -142,13 +163,13 @@ def plot_accuracy(dxs, errors, title: str):
     plt.figure()
     plt.scatter(log_dx, log_errors, color='black')
     plt.xlabel('log(dx)')
-    plt.ylabel('log(MSE)')
+    plt.ylabel('log(RMSE)')
     plt.title(title)
 
     p = np.polyfit(log_dx, log_errors, 1)
     plt.plot(log_dx, np.polyval(p, log_dx), '--', color='red',
-             label=f"log(MSE) = {p[0]:.1f}*log(dx) + {p[1]:.1f}")
-    plt.legend()
+             label=f"log(RMSE) = {p[0]:.1f}*log(dx) + {p[1]:.1f}")
+    plt.legend(fontsize='x-large')
     plt.show()
 
 
