@@ -1,3 +1,5 @@
+from typing import List
+
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm
@@ -8,13 +10,13 @@ def plot_evolution(t: np.ndarray[float], x: np.ndarray[float], u: np.ndarray[flo
     """
     Animate and plot the evolution of the solution over time.
 
-    Parameters
-    ----------
-    t : (np.ndarray) Time labels.
-    x : (np.ndarray) Space labels.
-    u : (np.ndarray) Velocity field at all time steps.
-    title : (str) Plot title.
+    Args:
+        t : (np.ndarray[float]) Time labels.
+        x : (np.ndarray[float]) Space labels.
+        u : (np.ndarray[float]) Velocity field at all time steps.
+        title : (str) Plot title.
     """
+    
     ylims = get_ylims(u[0])
 
     plt.plot(x, u[0], 'k', label='Initial Condition')
@@ -42,11 +44,10 @@ def plot_initial_condition(x: np.ndarray[float], u: np.ndarray[float], title: st
     """
     Plot the initial condition of the system.
 
-    Parameters
-    ----------
-    x : (np.ndarray) Space labels.
-    u : (np.ndarray) Velocity field at time t_start.
-    title : (str) Plot title.
+    Args:
+        x : (np.ndarray[float]) Space labels.
+        u : (np.ndarray[float]) Velocity field at time t_start.
+        title : (str) Plot title.
     """
     ylims = [0, 0.5]
 
@@ -62,6 +63,18 @@ def plot_initial_condition(x: np.ndarray[float], u: np.ndarray[float], title: st
 def plot_evolution_comparison(t: np.ndarray[float], x: np.ndarray[float],
                               u_a: np.ndarray[float], u_b: np.ndarray[float],
                               title: str, label_a: str, label_b: str):
+    """
+    Animate and plot the evolution of both solutions a and b over time.
+    
+    Args:
+       t : (np.ndarray[float]) Time labels.
+       x : (np.ndarray[float]) Space labels.
+       u_a : (np.ndarray[float]) Velocity field a at all time steps.
+       u_b : (np.ndarray[float]) Velocity field b at all time steps.
+       title : (str) Plot title.
+       label_a : (str) Label for solution a
+       label_b : (str) Label for solution b
+    """
     ylims = get_ylims(u_a[0])
 
     plt.plot(x, u_a[0], 'k', label='Initial Condition')
@@ -86,7 +99,20 @@ def plot_evolution_comparison(t: np.ndarray[float], x: np.ndarray[float],
     plt.show()
 
 
-def plot_stability_contours(dxs, diverging_dts, diverging_nus, title: str):
+def plot_stability_contours(dxs: np.ndarray[float],
+                            diverging_dts: List[np.ndarray[float]],
+                            diverging_nus: List[np.ndarray[float]],
+                            title: str):
+    """
+    Plot the stability boundaries of a scheme in terms of nu and dt, for several values of dx
+    
+    Args:
+       dxs : (np.ndarray[float]) dx value per contour
+       diverging_dts : (List[np.ndarray[float]]) list of arrays of dt values, one array per contour
+       diverging_nus : (np.ndarray[float]) list of arrays of nu values, one array per contour
+       title : (str) Plot title
+    """
+    
     cmap = matplotlib.cm.get_cmap('spring')
     color_values = np.linspace(0, 1, len(dxs))
 
@@ -106,10 +132,9 @@ def plot_mass_evolution(t, m):
     """
     Plot the relative mass difference of the system over time, given by $M(t) = (M_0 - Σ_x u(t, x)) / M_0$.
 
-    Parameters
-    ----------
-    t: (np.ndarray) Time labels.
-    m: (np.ndarray) Relative mass differences.
+    Args:
+        t : (np.ndarray[float]) Time labels.
+        m : (np.ndarray[float]) Mass differences, relative to baseline.
     """
     plt.cla()
     plt.plot(t, m, 'k', marker='o', markersize=1, label="M(t)")
@@ -126,9 +151,9 @@ def plot_linearized_stability(c, d, v, log_min, log_max, title: str):
     Adapted from ChatGPT.
 
     Args:
-        c: (ndarray) Values of the Courant number (dimensionless mean velocity)
-        d: (ndarray) Values of the dimensionless viscosity coefficient
-        v_max: Values of the total variation of the velocity at final time
+        c: (ndarray) Values of the Courant number (dimensionless mean velocity).
+        d: (ndarray) Values of the dimensionless viscosity coefficient.
+        v_max: Values of the total variation of the velocity at final time.
     """
     c, d, v = np.array(c), np.array(d), np.array(v)
     log_v = [np.log(min(max(v_i, np.exp(log_min)), np.exp(log_max))) for v_i in v]
@@ -157,6 +182,15 @@ def plot_linearized_stability(c, d, v, log_min, log_max, title: str):
 
 
 def plot_accuracy(dxs, errors, title: str):
+    """
+    Plot the errors vs dx on a log-log scale.
+
+    Args:
+        dxs : (np.ndarray[float]) Spatial resolution values.
+        errors : (np.ndarray[float]) Error values for the solutions corresponding to the values of dx.
+        title : (str) Plot title.
+    """
+    
     log_dx = np.log(dxs)
     log_errors = np.log(errors)
 
@@ -174,6 +208,16 @@ def plot_accuracy(dxs, errors, title: str):
 
 
 def get_ylims(*args):
+    """
+    Compute y-axis bounds for readable plots
+    
+    Args:
+        args : Arrays of values to be be plotted - can be one or more.
+    
+    Return:
+        ylims : (list[float]) Min and max values for y-axis
+    """
+
     u_min = min(arg.min() for arg in args)
     u_max = max(arg.max() for arg in args)
     u_mean = (u_min + u_max) / 2.
@@ -183,6 +227,18 @@ def get_ylims(*args):
 
 
 def plot_bounds_evolution(t, u_min, u_max, title):
+    """
+    Plot the evolution of the minimal and maximal values of a solution over time.
+
+    Mark points where the bounds have diverged compared to previous time step.
+    
+    Args:
+       t : (np.ndarray[float]) Time labels.
+       u_min : (np.ndarray[float]) Minimum value of u as a function of time
+       u_max : (np.ndarray[float]) Maximum value of u as a function of time.
+       title : (str) Plot title.
+    """
+    
     bad_inds_min = 1 + np.argwhere(u_min[1:] < u_min[:-1])
     bad_inds_max = 1 + np.argwhere(u_max[1:] > u_max[:-1])
     bad_ts = np.concatenate([t[bad_inds_min], t[bad_inds_max]])

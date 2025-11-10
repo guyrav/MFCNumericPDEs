@@ -8,11 +8,11 @@ class NumericalSchemeParams(object):
         nx: (int) Number of points in space, start and end count together as one point
         dt: (float) Time resolution
         dx: (float) Spatial resolution
+        dtdx: (float) dt / dx
         x_start: (float) Left end of space interval, default is 0
         x_end: (float) Right end of space interval
         t_start: (float) Initial time, default is 0
-        t_end: (float) Final time
-        dtdx: (float) dt / dx
+        t_end: (float) Final time 
     """
 
     def __init__(self, T, L, nt, nx, *args, x_start=0, t_start=0, **kwargs):
@@ -60,6 +60,9 @@ class AdvectionDiffusionParams(ViscousParams):
     """Parmeters for numerical schemes solving the linear advection-diffusion equation.
 
     Extends the ViscousParams class.
+    
+    Additional attribute:
+        v: (float) Constant velocity for advection.
     """
 
     def __init__(self, T, L, nt, nx, nu, v, *args, **kwargs):
