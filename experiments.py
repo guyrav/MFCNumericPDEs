@@ -72,15 +72,8 @@ def run_single_variation_experiment(scheme, T, L, nt, u_mean, initial_condition,
 
 
 def linearized_stability_experiment(scheme, T, L, nt, u_mean, initial_condition, c_min, c_max, nc, d_min, d_max, nd):
-    # c = np.linspace(0.1, 1.5, 40)
-    # d = np.linspace(0.1, 0.7, 40)
     c = np.linspace(c_min, c_max, nc)
     d = np.linspace(d_min, d_max, nd)
-
-    # c = u_mean * dt / dx = u_mean * T * nx / (L * nt)
-    # d = nu * dt / dx^2 = nu * T * nx^2 / (L^2 * nt)
-    # c / T * L * nt / u_mean = nx
-    # d / T * L^2 * nt / nx^2 = nu
 
     cs = []
     ds = []

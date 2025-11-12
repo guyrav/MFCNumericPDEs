@@ -4,7 +4,7 @@ from params import ViscousParams, AdvectionDiffusionParams
 from plots import plot_evolution, plot_stability_contours, plot_mass_evolution, plot_linearized_stability, \
     plot_accuracy, plot_evolution_comparison, plot_bounds_evolution, plot_initial_condition
 from schemes import BurgersFTCS, AdvectionDiffusionFTCS, AdvectionDiffusionSpectral, BurgersLeapfrog, \
-    BurgersSemiSpectral
+    BurgersPseudospectral
 from experiments import run_time_evolution, divergence_contour_experiment, get_relative_mass_evolution, \
     linearized_stability_experiment, accuracy_experiment, reference_solution, get_bounds
 from initial_conditions import gaussian, near_constant, reverse_step, sine_wave

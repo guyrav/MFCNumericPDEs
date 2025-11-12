@@ -232,14 +232,11 @@ class BurgersLeapfrog(Leapfrog):
         return "Burgers, CTCS with FT diffusion"
 
 
-class BurgersSemiSpectral(SingleTimeStepScheme):
+class BurgersPseudospectral(SingleTimeStepScheme):
     """Semispectral scheme for solving the Burgers equation.
 
     Uses Fourier analysis to compute the spatial derivatives, but does first-order forward time steps."""
     def _apply_step(self, params: ViscousParams, current_state: np.ndarray[float]):
-        c = params.dtdx
-        d = params.d
-
         u_hat = np.fft.fft(current_state)
         k = 2 * np.pi * np.fft.fftfreq(params.nx, params.dx)
 
