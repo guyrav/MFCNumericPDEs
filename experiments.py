@@ -33,6 +33,21 @@ def init(params: NumericalSchemeParams,
 
 
 def run_time_evolution(scheme: Scheme, params: NumericalSchemeParams, initial_condition: Callable):
+    """Run the numerical scheme given, on a given initial condition.
+
+    Args:
+        scheme: (Scheme) Numerical scheme
+        params: (Params) Numerical scheme parameters
+        initial_condition: (Callable) Function that takes in array of points in space and returns initial state
+
+    Return:
+        x : (nparray[float]) Spatial grid
+        t : (nparray[float]) Temporal grid
+        history : (nparray(nparray[float])) Matrix with dimensions (nt +1)*(nx + 1) storing all values 
+                                            of the solution under the given scheme for each grid point 
+                                            (in space and time)
+    """
+
     x, t, u_0, history = init(params, initial_condition, record_all=True)
 
     scheme(params, u_0, history)
@@ -134,32 +149,49 @@ def accuracy_experiment(scheme: Scheme, T, L, nu, initial_condition):
     return dxs, errors
 
 
-def divergence_contour_experiment(scheme: Scheme, initial_condition,
-                                  dxs, nt, nx, dt_min, dt_max, dt_num, nu_min, nu_max, nu_num):
+def divergence_contour_experiment(scheme: Scheme, initial_condition:Callable, L, T,
+                                  dxs, dt_min, dt_max, dt_num, nu_min, nu_max, nu_num):
     """
-    Explore FTCS stability conditions by varying dt and nu for fixed dx values.
+    Explore FTCS stability conditions by varying dt and nu for a set of dx values.
     Marks parameter pairs (dt, nu) that cause divergence: to the left of the curve, the numerical scheme is stable.
 
-    Parameters
-    ----------
-    dt, dx, nt, nx, T, L, nu : float or int
-        Base simulation parameters.
+    Args:
+        scheme : (Scheme) Numerical scheme for the experiment
+        initial_condition : (Callable) Function that takes in array of points in space and returns initial state
+        L: (float) Length of space interval         
+        T: (float) Length of time interval
+        dxs : (np.ndarray[float]) array of dx values
+        dt_min, dt_max : (float) Bounds for dt values
+        dt_num : (int) Number of dt values to test
+        nu_min, nu_max : (float) Bounds for nu values
+        nu_num : (int) Number of nu values to test
+
+    Return:
+        true_dxs : (np.ndarray[float]) True array of dx values used in the experiment
+        dt_diverged : (List(List[float])) List of smallest dt value causing divergence, for each dx value tested
+        nu_diverged : (List(List[float])) List of smallest nu value causing divergence, for each dx value tested
     """
     dt_values = np.linspace(dt_min, dt_max, dt_num)
     nu_values = np.linspace(nu_min, nu_max, nu_num)
 
+    nt_values = np.unique((T / dt_values).astype(int))
+    nt_values = nt_values[::-1]
+
+    nx_values = np.unique((L / dxs).astype(int))
+    true_dxs = L/nx_values
+
     threshold = 1.0  # divergence criterion
 
     dt_diverged, nu_diverged = [], []
-    for _ in dxs:
+    for _ in nx_values:
         dt_diverged.append([])
         nu_diverged.append([])
 
-    for dx, bad_dts, bad_nus in zip(dxs, dt_diverged, nu_diverged):
+    for nx, bad_dts, bad_nus in zip(nx_values, dt_diverged, nu_diverged):
         for nu in nu_values:
-            for dt in dt_values:
-                params = ViscousParams(nt * dt, nx * dx, nt, nx, nu)
-                x, t, u_0, history = init(params, initial_condition(params), record_all=True)
+            for nt in nt_values:
+                params = ViscousParams(T, L, nt, nx, nu)
+                x, t, u_0, history = init(params, initial_condition, record_all=True)
 
                 _ = scheme(params, u_0, history)
 
@@ -168,8 +200,8 @@ def divergence_contour_experiment(scheme: Scheme, initial_condition,
                 v = relative_total_variation(v_0, history[1:, :-1])
 
                 if np.any(v > threshold) or np.any(np.isnan(v)):
-                    bad_dts.append(dt)
+                    bad_dts.append(params.dt)
                     bad_nus.append(nu)
                     break
 
-    return dt_diverged, nu_diverged
+    return true_dxs, dt_diverged, nu_diverged
