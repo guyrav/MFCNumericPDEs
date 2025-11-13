@@ -1,11 +1,11 @@
 import numpy as np
 
 from params import ViscousParams, AdvectionDiffusionParams
-from plots import plot_evolution, plot_stability_contours, plot_stability_contours_comparison, plot_mass_evolution, plot_linearized_stability, \
+from plots import plot_evolution, plot_stability_contours, plot_stability_contours_comparison, plot_moment_evolution, plot_linearized_stability, \
     plot_accuracy, plot_evolution_comparison, plot_bounds_evolution, plot_initial_condition
 from schemes import BurgersFTCS, AdvectionDiffusionFTCS, AdvectionDiffusionSpectral, BurgersLeapfrog, \
     BurgersSemiSpectral
-from experiments import run_time_evolution, divergence_contour_experiment, get_relative_mass_evolution, \
+from experiments import run_time_evolution, divergence_contour_experiment, get_relative_moment_evolution, \
     linearized_stability_experiment, accuracy_experiment, reference_solution, get_bounds
 from initial_conditions import gaussian, near_constant, reverse_step, sine_wave, step_function
 
@@ -52,17 +52,6 @@ def run_accuracy(scheme):
     plot_accuracy(dxs, errors, r"Error vs. high-resolution solution at $t=1$ (with $\Delta t \sim \Delta x^2$)")
 
 
-def run_mass_evolution(scheme):
-    T = 20
-    L = 10
-    nx = 50
-    nt = 120
-    nu = 0.1
-    _, t, history = run_time_evolution(scheme, ViscousParams(T, L, nt, nx, nu), gaussian(L / 2, 1))
-    mass = get_relative_mass_evolution(history)
-    plot_mass_evolution(t, mass)
-
-
 def run_bounds_evolution(scheme, dt, dx, nu, epsilon):
     nt = 40
     nx = 100
@@ -90,7 +79,7 @@ def run_stability_experiments(scheme):
     Plots generated:
         Plot of initial state
         Plot of stability contours of the scheme with respect to nu and dt, for different resolutions dx
-        Plot of stability contours of the scheme against stability boundaries for the linear case, for a chosen dx  
+        Plot of stability contours of the scheme against stability boundaries for the linear case, for a chosen dx
     """
     T = 20
     L = 10
@@ -115,23 +104,87 @@ def run_stability_experiments(scheme):
     for f in initial_conditions:
         x = np.linspace(0,L,100)
         plot_initial_condition(x,f(x), "Initial state")
-        real_dxs, diverging_dts, diverging_nus = divergence_contour_experiment(scheme, f, L, T, dx_values, 
-                                                                     dt_min, dt_max, n_dt, nu_min, 
+        real_dxs, diverging_dts, diverging_nus = divergence_contour_experiment(scheme, f, L, T, dx_values,
+                                                                     dt_min, dt_max, n_dt, nu_min,
                                                                      nu_max, n_nu)
 
         plot_stability_contours(real_dxs, diverging_dts, diverging_nus, r'Minimal values of $\Delta t$ and $\nu$ for an unstable solution')
         plot_stability_contours_comparison(real_dxs[1], np.array(diverging_dts[1]), np.array(diverging_nus[1]), f(x), "Comparison linear and non-linear stability boundaries")
 
 
+def stability_experiments(scheme):
+    """
+    Explore stability conditions of a numerical scheme.
+
+    Different parameters defining the conditions of the simulation are hard coded.
+    A list of initial states is chosen and the experiments are run for each of them.
+
+    Plots generated:
+        Plot of initial state
+        Plot of stability contours of the scheme with respect to nu and dt, for different resolutions dx
+        Plot of stability contours of the scheme against stability boundaries for the linear case, for a chosen dx
+    """
+    T = 20
+    L = 10
+
+    dx_values = np.array([0.1, 0.3, 0.6, 0.9])
+
+    dt_min, dt_max = 0.01, 1.5
+    nu_min, nu_max = 0.01, 1.5
+    n_dt = 100
+    n_nu = 100
+
+    initial_conditions = [lambda x: 4 * np.sqrt(2 * np.pi) * gaussian(L/2, 1)(x), lambda x: 2* np.sqrt(2 * np.pi) * gaussian(L/2, 1)(x),
+                         near_constant(0.2, 0.5, reverse_step(1. / 3, 3. / 3)), step_function(L, a=2) ]
+    #initial_conditions =[step_function(L, a=4) ]
+
+    for f in initial_conditions:
+        x = np.linspace(0,L,100)
+        plot_initial_condition(x,f(x), "Initial state")
+        real_dxs, diverging_dts, diverging_nus = divergence_contour_experiment(scheme, f, L, T, dx_values,
+                                                                     dt_min, dt_max, n_dt, nu_min,
+                                                                     nu_max, n_nu)
+
+        plot_stability_contours(real_dxs, diverging_dts, diverging_nus, r'Minimal values of $\Delta t$ and $\nu$ for an unstable solution')
+        plot_stability_contours_comparison(real_dxs[1], np.array(diverging_dts[1]), np.array(diverging_nus[1]), f(x), "Comparison linear and non-linear stability boundaries")
+
+
+
+def run_moment_evolution(scheme):
+    """
+    Visualize mass conservation and energy decay, for a given scheme and non constant initial state.
+
+    Plots generated:
+        Plot of relative mass evolution
+        Plot of relative energy evolution
+    """
+    T = 20
+    L = 10
+    nx = 30
+    nt = 120
+    nu = 0.2
+
+    initial_state = step_function(L, a=2)
+
+    _, t, history = run_time_evolution(scheme, ViscousParams(T, L, nt, nx, nu),  initial_state)
+    mass = get_relative_moment_evolution(history,1)
+    moment2 = get_relative_moment_evolution(history,2)
+    energy = moment2/2
+
+    plot_moment_evolution(t, mass,1, "Relative mass for step function initial state")
+    plot_moment_evolution(t, energy,2, "Relative energy for step function initial state")
+
+
+
+
+
+
 def main():
     # run_evolution(BurgersFTCS(), 20, 10, 120, 50, 0.1)
 
     # compare_evolution(BurgersFTCS(), AdvectionDiffusionSpectral(), 20, 10, 120, 50, 0.1,
-    #                   "FTCS", "Spectral")
+                    #   "FTCS", "Spectral")
 
-    # run_stability_contours(BurgersFTCS())
-
-    # run_mass_evolution(BurgersSemiSpectral())
 
     # run_cd_linearized_stability(BurgersFTCS(), 1, 1, 12, 0.2, 1.,
     #                             reverse_step(1. / 3, 2. / 3))
@@ -141,6 +194,12 @@ def main():
     # run_bounds_evolution(BurgersLeapfrog(BurgersFTCS()), 1, 5, 0.1, 0.05)
 
     run_stability_experiments(BurgersFTCS())
+
+
+
+    # tests Andrea :
+    # run_moment_evolution(BurgersFTCS())
+    # stability_experiments(BurgersFTCS())
 
 
 if __name__ == "__main__":

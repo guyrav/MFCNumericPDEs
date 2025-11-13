@@ -129,27 +129,27 @@ def plot_stability_contours(dxs: np.ndarray[float],
 
 
 def plot_stability_contours_comparison(dx: float,
-                                       diverging_dts: np.ndarray[float],
-                                       diverging_nus: np.ndarray[float],
-                                       u0: np.ndarray[float],
-                                       title: str):
-    """Plot the stability boundaries of a scheme and compare it to linear-advection diffusion boundaries.
+                            diverging_dts: np.ndarray[float],
+                            diverging_nus: np.ndarray[float],
+                            u0: np.ndarray[float],
+                            title: str):
+    """
+    Plot the stability boundaries of a scheme and compare it to linear-advection diffusion boundaries.
 
     The boundaries are given in terms of dt and nu, for a given dx.
-    The boundaries for the advection term of linearised equation
-    are computed for the mean and max value of the initial condition u0.
+    The boundaries for the advection term of linearised equation are computed for the mean and max value of the initial condition u0.
 
     Args:
-       dx : (float) dx value 
-       diverging_dts : (List or np.ndarray[float]) dt values
-       diverging_nus : (List or np.ndarray[float]) nu values
-       u0 : (np.ndarray[float]) initial state
+       dx : (float) dx value
+       diverging_dts : (np.ndarray[float]) array of dt values
+       diverging_nus : (np.ndarray[float]) array of nu values
+       u0 : (np.ndarray[float]) array of initial state
        title : (str) Plot title
     """
+
     dts = np.linspace(0,max(np.max(diverging_dts),1.5),100)
-    
     plt.scatter(diverging_dts, diverging_nus, color='k', s=4,
-            label=fr"$\Delta x = {dx:.2f}$")
+            label="Numerical unstability boundary")
     plt.plot(dts, ((np.max(u0)**2) * dts) / 2, color='red',
             label=r'$\Delta t = \frac{2\nu}{(\max(u_0))^2}$')
     plt.plot(dts, ((np.mean(u0)**2) * dts) / 2, color='orange',
@@ -160,26 +160,28 @@ def plot_stability_contours_comparison(dx: float,
     plt.xlabel(r'$\Delta t$ (time step)', fontsize=13)
     plt.ylabel(r'$\nu$ (viscosity)', fontsize=13)
     plt.title(title, fontsize=14)
-    plt.ylim([-0.2, 1.5])
-    plt.legend(fontsize=11)  
+    plt.ylim([0, 1.5])
+    plt.legend(fontsize=11)
     plt.grid(True, linestyle=':')
 
     plt.show()
 
 
-def plot_mass_evolution(t, m):
-    """Plot the relative mass difference of the system over time, given by $M(t) = (M_0 - Σ_x u(t, x)) / M_0$.
+def plot_moment_evolution(t, m, n, title: str):
+    """Plot the relative moment n difference of the system over time.
 
     Args:
         t : (np.ndarray[float]) Time labels.
-        m : (np.ndarray[float]) Mass differences, relative to baseline.
+        m : (np.ndarray[float]) n moment differences, relative to baseline.
     """
     plt.cla()
-    plt.plot(t, m, 'k', marker='o', markersize=1, label="M(t)")
+    plt.plot(t, m, 'k', marker='o', markersize=1, label="Numerical evolution")
     plt.legend(loc='best')
-    plt.ylabel('relative mass difference')
+    plt.ylabel(f'relative moment {n} difference')
+    plt.title(title, fontsize=14)
     plt.xlabel('t')
-    plt.ylim([-0.01, 0.01])
+    plt.ylim([-0.5, 0.5])
+    plt.legend(fontsize=11)
     plt.show()
 
 

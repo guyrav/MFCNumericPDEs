@@ -4,13 +4,13 @@ import numpy as np
 
 from params import NumericalSchemeParams, ViscousParams, AdvectionDiffusionParams
 from schemes import Scheme
-from state_properties import total_mass, relative_total_mass, total_variation, relative_total_variation
+from state_properties import moment, relative_moment, total_variation, relative_total_variation
 
 
 def init(params: NumericalSchemeParams,
          initial_condition: Callable[[np.ndarray[float]], np.ndarray[float]],
          record_all=False):
-    """Create space and time coordinates and initial state.
+    """Create space and time coordinates, and initial state.
 
     If record_all is set to True, also create a table to store all states.
 
@@ -43,8 +43,8 @@ def run_time_evolution(scheme: Scheme, params: NumericalSchemeParams, initial_co
     Return:
         x : (nparray[float]) Spatial grid
         t : (nparray[float]) Temporal grid
-        history : (nparray(nparray[float])) Matrix with dimensions (nt +1)*(nx + 1) storing all values 
-                                            of the solution under the given scheme for each grid point 
+        history : (nparray(nparray[float])) Matrix with dimensions (nt +1)*(nx + 1) storing all values
+                                            of the solution under the given scheme for each grid point
                                             (in space and time)
     """
 
@@ -55,9 +55,9 @@ def run_time_evolution(scheme: Scheme, params: NumericalSchemeParams, initial_co
     return x, t, history
 
 
-def get_relative_mass_evolution(history: np.ndarray):
-    m_0 = total_mass(history[0, :-1])
-    return relative_total_mass(m_0, history[:, :-1])
+def get_relative_moment_evolution(history: np.ndarray, n : int=1):
+    m_0 = moment(history[0, :-1],n)
+    return relative_moment(m_0, history[:, :-1], n)
 
 
 def get_bounds(history: np.ndarray[float]):
@@ -151,7 +151,7 @@ def divergence_contour_experiment(scheme: Scheme, initial_condition:Callable, L,
     Args:
         scheme : (Scheme) Numerical scheme for the experiment
         initial_condition : (Callable) Function that takes in array of points in space and returns initial state
-        L: (float) Length of space interval         
+        L: (float) Length of space interval
         T: (float) Length of time interval
         dxs : (np.ndarray[float]) array of dx values
         dt_min, dt_max : (float) Bounds for dt values
