@@ -47,7 +47,7 @@ def plot_initial_condition(x: np.ndarray[float], u: np.ndarray[float], title: st
         u : (np.ndarray[float]) Velocity field at time t_start.
         title : (str) Plot title.
     """
-    ylims = [-1.1, 4.1]
+    ylims = ylims = get_ylims(u)
 
     plt.plot(x, u, 'k')
     plt.title(title)

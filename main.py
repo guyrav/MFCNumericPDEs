@@ -3,8 +3,7 @@ import numpy as np
 from params import ViscousParams, AdvectionDiffusionParams
 from plots import plot_evolution, plot_stability_contours, plot_stability_contours_comparison, plot_moment_evolution, plot_linearized_stability, \
     plot_accuracy, plot_evolution_comparison, plot_bounds_evolution, plot_initial_condition
-from schemes import BurgersFTCS, AdvectionDiffusionFTCS, AdvectionDiffusionSpectral, BurgersLeapfrog, \
-    BurgersSemiSpectral
+from schemes import BurgersFTCS, AdvectionDiffusionFTCS, AdvectionDiffusionSpectral, BurgersLeapfrog
 from experiments import run_time_evolution, divergence_contour_experiment, get_relative_moment_evolution, \
     linearized_stability_experiment, accuracy_experiment, reference_solution, get_bounds
 from initial_conditions import gaussian, near_constant, reverse_step, sine_wave, step_function
@@ -186,14 +185,19 @@ def main():
                     #   "FTCS", "Spectral")
 
 
-    # run_cd_linearized_stability(BurgersFTCS(), 1, 1, 12, 0.2, 1.,
+    # Stability heatmap - nonlinear case
+    run_cd_linearized_stability(BurgersFTCS(), 1, 1, 12, 0.2, 1.,
+                                reverse_step(1. / 3, 2. / 3))
+
+    # Stability heatmap - linearised case
+    # run_cd_linearized_stability(BurgersFTCS(), 1, 1, 12, 0.2, 0.05,
     #                             reverse_step(1. / 3, 2. / 3))
 
     #run_accuracy(BurgersFTCS())
 
     # run_bounds_evolution(BurgersLeapfrog(BurgersFTCS()), 1, 5, 0.1, 0.05)
 
-    run_stability_experiments(BurgersFTCS())
+    # run_stability_experiments(BurgersFTCS())
 
 
 
