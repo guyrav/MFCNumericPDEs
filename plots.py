@@ -49,11 +49,12 @@ def plot_initial_condition(x: np.ndarray[float], u: np.ndarray[float], title: st
         u : (np.ndarray[float]) Velocity field at time t_start.
         title : (str) Plot title.
     """
-    ylims = [0, 0.5]
+    ylims = [-1.1, 4.1]
 
     plt.plot(x, u, 'k')
     plt.title(title)
     plt.ylabel('velocity')
+    plt.xlabel('x')
     plt.axhline(0, linestyle=':', color='black')
     plt.ylim(ylims)
 
@@ -108,8 +109,8 @@ def plot_stability_contours(dxs: np.ndarray[float],
     
     Args:
        dxs : (np.ndarray[float]) dx value per contour
-       diverging_dts : (List[np.ndarray[float]]) list of arrays of dt values, one array per contour
-       diverging_nus : (np.ndarray[float]) list of arrays of nu values, one array per contour
+       diverging_dts : (List[List[float]]) list of lists of dt values, one list per contour
+       diverging_nus : (List[List[float]]) list of lists of nu values, one list per contour
        title : (str) Plot title
     """
     
@@ -117,31 +118,75 @@ def plot_stability_contours(dxs: np.ndarray[float],
     color_values = np.linspace(0, 1, len(dxs))
 
     for dx, dts, nus, color in zip(dxs, diverging_dts, diverging_nus, color_values):
-        plt.scatter(dts, nus, color=cmap(color), s=4, label=f"dx = {dx:.2f}")
+        plt.scatter(dts, nus, color=cmap(color), s=8, label=fr"$\Delta x = {dx:.2f}$")
 
-    plt.legend()
-    plt.title(title)
-    plt.xlabel('dt')
-    plt.ylabel('nu')
-    plt.xlim([0, 1.1])
-    plt.ylim([0, 1.1])
+    plt.xlabel(r'$\Delta t$ (time step)', fontsize=13)
+    plt.ylabel(r'$\nu$ (viscosity)', fontsize=13)
+    plt.title(title, fontsize=14)
+    plt.xlim([0, 1.5])
+    plt.ylim([0, 1.5])
+
+    plt.legend(fontsize=11)
+    plt.grid(True, linestyle=':')
+
     plt.show()
 
 
-def plot_mass_evolution(t, m):
+def plot_stability_contours_comparison(dx: float,
+                            diverging_dts: np.ndarray[float],
+                            diverging_nus: np.ndarray[float], 
+                            u0: np.ndarray[float],
+                            title: str):
     """
-    Plot the relative mass difference of the system over time, given by $M(t) = (M_0 - Σ_x u(t, x)) / M_0$.
+    Plot the stability boundaries of a scheme and compare it to linear-advection diffusion boundaries.
+
+    The boundaries are given in terms of dt and nu, for a given dx.
+    The boundaries for the advection term of linearised equation are computed for the mean and max value of the initial condition u0.
+
+    Args:
+       dx : (float) dx value 
+       diverging_dts : (np.ndarray[float]) array of dt values
+       diverging_nus : (np.ndarray[float]) array of nu values
+       u0 : (np.ndarray[float]) array of initial state
+       title : (str) Plot title
+    """
+
+    dts = np.linspace(0,max(np.max(diverging_dts),1.5),100)
+    plt.scatter(diverging_dts, diverging_nus, color='k', s=4,
+            label="Numerical unstability boundary")
+    plt.plot(dts, ((np.max(u0)**2) * dts) / 2, color='red',
+            label=r'$\Delta t = \frac{2\nu}{(\max(u_0))^2}$')
+    plt.plot(dts, ((np.mean(u0)**2) * dts) / 2, color='orange',
+            label=r'$\Delta t = \frac{2\nu}{(\mathrm{mean}(u_0))^2}$')
+    plt.plot(dts, (dx**2) / (2 * dts), color='blue',
+            label=r'$\Delta t = \frac{(\Delta x)^2}{2\nu}$')
+
+    plt.xlabel(r'$\Delta t$ (time step)', fontsize=13)
+    plt.ylabel(r'$\nu$ (viscosity)', fontsize=13)
+    plt.title(title, fontsize=14)
+    plt.ylim([0, 1.5])
+    plt.legend(fontsize=11)  
+    plt.grid(True, linestyle=':')
+
+    plt.show()
+
+
+def plot_moment_evolution(t, m, n, title: str):
+    """
+    Plot the relative moment n difference of the system over time.
 
     Args:
         t : (np.ndarray[float]) Time labels.
-        m : (np.ndarray[float]) Mass differences, relative to baseline.
+        m : (np.ndarray[float]) n moment differences, relative to baseline.
     """
     plt.cla()
-    plt.plot(t, m, 'k', marker='o', markersize=1, label="M(t)")
+    plt.plot(t, m, 'k', marker='o', markersize=1, label="Numerical evolution")
     plt.legend(loc='best')
-    plt.ylabel('relative mass difference')
+    plt.ylabel(f'relative moment {n} difference')
+    plt.title(title, fontsize=14)
     plt.xlabel('t')
-    plt.ylim([-0.01, 0.01])
+    plt.ylim([-0.5, 0.5])
+    plt.legend(fontsize=11)  
     plt.show()
 
 

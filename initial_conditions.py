@@ -40,3 +40,9 @@ def sine_wave(k):
     def ret(x):
         return np.sin(k * x)
     return ret
+
+
+def step_function(L, a = 1):
+    def ret(x):
+        return np.where((x < L / 3) | (x > 2 * L / 3), 0.0, a)
+    return ret 
