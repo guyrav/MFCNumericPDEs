@@ -28,7 +28,7 @@ def compare_evolution(scheme_a, scheme_b, T, L, nt, nx, nu, label_a, label_b):
     plot_evolution_comparison(t, x, u_a, u_b, "Gaussian initial condition", label_a, label_b)
 
 
-def run_cd_linearized_stability(scheme, T, L, nt, u_mean, epsilon, perturbation):
+def run_linearised_stability(scheme, T, L, nt, u_mean, epsilon, perturbation):
     initial_condition = near_constant(u_mean, epsilon, perturbation)
     cs, ds, vs = linearized_stability_experiment(scheme, T, L, nt, u_mean, initial_condition,
                                                  0.1, 1.5, 40, 0.1, 0.7, 40)
@@ -41,11 +41,7 @@ def run_cd_linearized_stability(scheme, T, L, nt, u_mean, epsilon, perturbation)
 
 def run_accuracy(scheme):
     T = L = 1
-    u_mean = 0.5
-    epsilon = 0.05
     nu = 0.1
-    # initial_condition = near_constant(u_mean, epsilon, gaussian(L/2, 1))
-    # initial_condition = near_constant(u_mean, epsilon, reverse_step(1. / 3, 2. / 3))
     initial_condition = gaussian(L/2, 1)
     dxs, errors = accuracy_experiment(scheme, T, L, nu, initial_condition)
     plot_accuracy(dxs, errors, r"Error vs. high-resolution solution at $t=1$ (with $\Delta t \sim \Delta x^2$)")
@@ -65,7 +61,7 @@ def run_bounds_evolution(scheme):
     plot_bounds_evolution(t, u_min, u_max, "Bounds of $u(t, x)$ over time")
 
 
-def stability_experiments(scheme):
+def run_general_stability_experiments(scheme):
     """
     Explore stability conditions of a numerical scheme.
 
@@ -103,7 +99,7 @@ def stability_experiments(scheme):
         plot_stability_contours_comparison(real_dxs[1], np.array(diverging_dts[1]), np.array(diverging_nus[1]), f(x), "Comparison linear and non-linear stability boundaries")
 
 
-def run_moment_evolution(scheme):
+def run_mass_energy_evolution(scheme):
     """
     Visualize mass conservation and energy decay, for a given scheme and non constant initial state.
 
@@ -129,31 +125,23 @@ def run_moment_evolution(scheme):
 
 
 def main():
-    # run_evolution(BurgersFTCS(), 20, 10, 120, 50, 0.1)
+    run_evolution(BurgersFTCS(), 20, 10, 120, 50, 0.1)
 
-    # compare_evolution(BurgersFTCS(), AdvectionDiffusionSpectral(), 20, 10, 120, 50, 0.1,
-                    #   "FTCS", "Spectral")
+    # 3.1 Stability in the Linearised Case
+    # run_linearised_stability(BurgersFTCS(), 1, 1, 12, 0.2, 0.05, reverse_step(1. / 3, 2. / 3))
 
-
-    # Stability heatmap - nonlinear case
-    # run_cd_linearized_stability(BurgersFTCS(), 1, 1, 12, 0.2, 1.,
-    #                             reverse_step(1. / 3, 2. / 3))
-
-    # Stability heatmap - linearised case
-    # run_cd_linearized_stability(BurgersFTCS(), 1, 1, 12, 0.2, 0.05,
-    #                             reverse_step(1. / 3, 2. / 3))
-
-    #run_accuracy(BurgersFTCS())
-
-    # run_bounds_evolution(BurgersLeapfrog(BurgersFTCS()))
-
-    run_bounds_evolution(BurgersFTCS())
-
+    # 3.2 Stability in the general viscous Burgers
     # run_stability_experiments(BurgersFTCS())
 
-    # tests Andrea :
+    # 3.3 Conservation of mass and non-conservation of energy
     # run_moment_evolution(BurgersFTCS())
-    # stability_experiments(BurgersFTCS())
+
+    # 3.3.1 Non-conservation of boundedness
+    # run_bounds_evolution(BurgersFTCS())
+    # run_bounds_evolution(BurgersLeapfrog(BurgersFTCS()))
+
+    # 3.4 Accuracy
+    # run_accuracy(BurgersFTCS())
 
 
 if __name__ == "__main__":
